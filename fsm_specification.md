@@ -176,8 +176,7 @@ stateDiagram-v2
 # Client  side
 ```mermaid
 stateDiagram-v2 
-    state Client 
-    {
+    state Client {
         [*] --> RBDTU : Started
         
         state "Read game state and wait for input" as RGC
