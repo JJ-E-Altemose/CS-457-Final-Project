@@ -27,7 +27,7 @@ All messages get a Version then an TYPEID
 > - 2 DRAW
 
 Instead of the client saying im going now, we tell the client its allowed to go now, and if the client disconnects at any other time than after this, they lose, bad internet sucks to be yous.
-And because I will be using java it will all be exceptions I can cat and easily just send to the other client
+And because I will be using java it will all be exceptions thrown from accessing stream I can catch and easily just send a GAME_END to the other client
 
 # ROUND_END (1) Response (Server --> Client)
 Tells the client the round has now ended, and weather or not to expect the select board response
