@@ -66,6 +66,8 @@ Check fsm_spesification.md
 - **Synchronization Logic:** Explain how shared game state and client list are thread-safe (e.g. `threading.Lock`) to prevent race conditions during turn processing.
 
 ### 3.2 State & Score Synchronization Across Clients
+
+** The FSM diagram already documents the sequence of events extensively but not as cleanly **
 - **Turn Enforcement:** Detail how the server validates active player ID before processing moves and broadcasts updated turn notifications to all clients.
 - **Score & Board Synchronization:** Describe how state broadcasts keep client screens synchronized in real time.
 
