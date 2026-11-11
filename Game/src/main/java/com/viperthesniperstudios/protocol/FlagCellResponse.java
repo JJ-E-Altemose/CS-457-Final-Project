@@ -6,7 +6,7 @@ import java.io.OutputStream;
 
 public class FlagCellResponse extends Message
 {
-    enum Code
+    public enum Code
     {
         SUCCESS,
         INVALID
@@ -31,6 +31,12 @@ public class FlagCellResponse extends Message
     protected FlagCellResponse(MessageHeader header)
     {
         super(header);
+    }
+
+    public FlagCellResponse(Code code)
+    {
+        super(new MessageHeader(0, TypeID.FLAG_CELL_RESPONSE));
+        this.code = code;
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.viperthesniperstudios.protocol;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class SelectBoardRequest extends Message
 {
@@ -41,9 +43,36 @@ public class SelectBoardRequest extends Message
         return board;
     }
 
+    private static void writeBoard(CellByte[][] board, OutputStream outputStream) throws IOException
+    {//todo DUPLICATED SELECT_BOARD && GAME_STATE
+
+        for (int i = 0; i < board.length; i++)
+        {
+            for(int j = 0; j < board[i].length; j++)
+            {
+                outputStream.write(board[i][j].toByte());
+            }
+        }
+    }
+
     @Override
     public Message newMessageFromStream(MessageHeader header, InputStream inputStream) throws IOException
     {
         return new SelectBoardRequest(header).readFromStream(inputStream);
+    }
+
+    @Override
+    public void writeToStream(OutputStream outputStream) throws IOException
+    {
+        header.writeToStream(outputStream);
+
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+
+        dataOutputStream.writeShort(width);
+        dataOutputStream.writeShort(height);
+
+        writeBoard(board1, outputStream);
+        writeBoard(board2, outputStream);
+        writeBoard(board3, outputStream);
     }
 }

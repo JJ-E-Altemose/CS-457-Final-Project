@@ -36,12 +36,20 @@ public class MessageHeader
         typeID = TypeID.getType(dataInputStream.readInt());
     }
 
+    public MessageHeader(int version, TypeID typeID)
+    {
+        this.length = 0;
+        this.protocolVersion = 0;
+        this.version = (short) version;
+        this.typeID = typeID;
+    }
+
     public void writeToStream(OutputStream outputStream) throws IOException
     {
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-        dataOutputStream.writeInt((int) length);
-        dataOutputStream.writeShort(protocolVersion);
+//todo cleanup
+        //dataOutputStream.writeInt((int) length);
+        //dataOutputStream.writeShort(protocolVersion);
         dataOutputStream.writeShort(version);
         dataOutputStream.writeInt(typeID.id);
     }

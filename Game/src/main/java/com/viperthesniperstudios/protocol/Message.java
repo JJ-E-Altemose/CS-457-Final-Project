@@ -6,9 +6,6 @@ import java.io.OutputStream;
 
 public abstract class Message
 {
-    /**
-     * uint32
-     */
     public final MessageHeader header;
 
     protected Message(MessageHeader header)

@@ -7,7 +7,7 @@ import java.io.OutputStream;
 
 public class FlagCellRequest extends Message
 {
-    short x, y;
+    public short x, y;
 
     protected FlagCellRequest(MessageHeader header)
     {

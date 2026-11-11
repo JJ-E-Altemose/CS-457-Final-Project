@@ -1,8 +1,10 @@
 package com.viperthesniperstudios.protocol;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class RevealCellResponse extends Message
 {
@@ -53,5 +55,29 @@ public class RevealCellResponse extends Message
     public Message newMessageFromStream(MessageHeader header, InputStream inputStream) throws IOException
     {
         return new RevealCellResponse(header).readFromStream(inputStream);
+    }
+
+    @Override
+    public void writeToStream(OutputStream outputStream) throws IOException
+    {
+        header.writeToStream(outputStream);
+
+        outputStream.write(returnCode.ordinal());
+
+        //PADDING
+        outputStream.write(0);
+        outputStream.write(0);
+        outputStream.write(0);
+
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+        //TODO CHECK NESTING
+        //dataOutputStream.writeShort(version);
+        //dataOutputStream.writeInt(typeID);
+
+        if(returnCode != ReturnCode.INVALID_CELL_ERROR &&
+           returnCode != ReturnCode.ALREADY_REVEALED_ERROR)
+        {
+            response.writeToStream(outputStream);
+        }
     }
 }

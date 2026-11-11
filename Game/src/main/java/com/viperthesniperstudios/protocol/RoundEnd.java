@@ -3,6 +3,7 @@ package com.viperthesniperstudios.protocol;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class RoundEnd extends Message
 {
@@ -53,5 +54,15 @@ public class RoundEnd extends Message
     public Message newMessageFromStream(MessageHeader header, InputStream inputStream) throws IOException
     {
         return new RoundEnd(header).readFromStream(inputStream);
+    }
+
+    @Override
+    public void writeToStream(OutputStream outputStream) throws IOException
+    {
+        header.writeToStream(outputStream);
+
+        outputStream.write(type.ordinal());
+
+        response.writeToStream(outputStream);
     }
 }
