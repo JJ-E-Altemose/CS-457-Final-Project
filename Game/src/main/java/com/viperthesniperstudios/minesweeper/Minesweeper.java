@@ -1,7 +1,5 @@
 package com.viperthesniperstudios.minesweeper;
 
-import com.viperthesniperstudios.client.CodeBuffer;
-import com.viperthesniperstudios.client.Key;
 import com.viperthesniperstudios.protocol.CellByte;
 
 import java.io.IOException;
@@ -9,12 +7,12 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-public class AbstractMinesweeper
+public class Minesweeper
 {
-    public CellByte[][] board;
-    public int width, height;
+    protected CellByte[][] board;
+    protected int width, height;
 
-    public AbstractMinesweeper(int width, int height, int bombs, long seed)
+    public Minesweeper(int width, int height)
     {
         if(width < 4 || height < 4 || width % 2 == 0 || height % 2 == 0)
         {
@@ -24,12 +22,25 @@ public class AbstractMinesweeper
         this.width = width;
         this.height = height;
         this.board = new CellByte[width][height];
+    }
 
+    public int getWidth()
+    {
+        return this.width;
+    }
+
+    public int getHeight()
+    {
+        return height;
+    }
+
+    public void fillBoard(int bombs, long seed)
+    {
         for(int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                this.board[x][y] = new CellByte(0);
+                this.board[x][y] = new CellByte();
             }
         }
 
@@ -181,87 +192,5 @@ public class AbstractMinesweeper
             }
         }
         return super.toString();
-    }
-
-    public String toRevealedString()
-    {
-        for (int y = 0; y < height; y++)
-        {
-            System.out.println();
-            for (int x = 0; x < width; x++)
-            {
-                System.out.print(board[x][y].revealedCharacter());
-            }
-        }
-        return super.toString();
-    }
-
-    public void play() throws IOException
-    {
-        CodeBuffer codeBuffer = new CodeBuffer(3);
-
-        int cursorX = 0, cursorY = 0;
-
-        Key lastKey = new Key('\0');
-        System.out.print("\033[H\033[2J");
-        mineSweeperTerminalPrint(cursorX, cursorY);
-        String afterClearPrint = "";
-
-        while (true)
-        {
-            Key key = Key.getKey(codeBuffer, System.in);
-
-            if(key.isSpecial)
-            {
-                switch (key.type)
-                {
-                    case DOWN_ARROW -> cursorY = (cursorY+1) % height;
-                    case UP_ARROW -> cursorY = (cursorY+ height-1) % height;
-                    case LEFT_ARROW -> cursorX = (cursorX+ width-1) % width;
-                    case RIGHT_ARROW -> cursorX = (cursorX+1) % width;
-                }
-
-                if(key.type == Key.Type.ENTER)
-                {
-                    if(lastKey.character == 'r')
-                    {
-                        revealCell(cursorX, cursorY);
-                        afterClearPrint += "\nReveling cell\n";
-                    }
-                }
-            }
-            else
-            {
-                if(key.character == 'r')
-                {
-                    afterClearPrint += "\nPress Enter to reveal cell\n";
-                }
-            }
-            System.out.print("\033[H\033[2J");
-
-            mineSweeperTerminalPrint(cursorX, cursorY);
-            System.out.println(afterClearPrint);
-            afterClearPrint = "";
-
-            lastKey = key;
-        }
-    }
-
-    private void mineSweeperTerminalPrint(int cursorX, int cursorY)
-    {
-        for (int y = 0; y < height; y++)
-        {
-            System.out.println();
-            for (int x = 0; x < width; x++)
-            {
-                if(x == cursorX && y == cursorY)
-                {
-                    System.out.print("*");
-                    continue;
-                }
-
-                System.out.print(getCell(x,y));
-            }
-        }
     }
 }

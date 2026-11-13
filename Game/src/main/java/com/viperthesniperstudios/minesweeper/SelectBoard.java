@@ -2,12 +2,12 @@ package com.viperthesniperstudios.minesweeper;
 
 public class SelectBoard extends GameWin
 {
-    AbstractMinesweeper[] boards;
+    public Minesweeper[] boards;
 
-    public SelectBoard(AbstractMinesweeper[] boards)
+    public SelectBoard(Minesweeper[] boards)
     {
         super();
 
-        this.boards =boards;
+        this.boards = boards;
     }
 }

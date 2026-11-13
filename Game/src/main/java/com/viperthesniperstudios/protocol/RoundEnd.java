@@ -12,6 +12,14 @@ public class RoundEnd extends Message
         super(header);
     }
 
+    public RoundEnd(Type type, Message response)
+    {
+        super(new MessageHeader(0, TypeID.ROUND_END));
+
+        this.type = type;
+        this.response = response;
+    }
+
     /**
      * uint1
      */

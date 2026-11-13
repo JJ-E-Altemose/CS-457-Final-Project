@@ -1,4 +1,4 @@
-package com.viperthesniperstudios.client;
+package com.viperthesniperstudios.minesweeper;
 
 public class CodeBuffer
 {

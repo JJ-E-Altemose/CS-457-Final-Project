@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 public class RevealCellResponse extends Message
 {
-    enum ReturnCode
+    public enum ReturnCode
     {
         GAME_STATE_RETURN,
         INVALID_CELL_ERROR,
@@ -17,15 +17,24 @@ public class RevealCellResponse extends Message
         ROUND_END
     }
 
-    ReturnCode returnCode;
+    public ReturnCode returnCode = null;
     //3 Bytes of padding
-    short version;
-    int typeID;
-    Message response;
+    public short version = 0;
+    public int typeID = 0;
+    public Message response = null;
 
-    protected RevealCellResponse(MessageHeader header)
+    public RevealCellResponse(MessageHeader header)
     {
         super(header);
+    }
+
+    public RevealCellResponse(ReturnCode returnCode, Message response)
+    {
+        super(new MessageHeader(0, TypeID.REVEAL_CELL_RESPONSE));//todo why we passing the header wth is the point?
+
+        this.returnCode = returnCode;
+        this.typeID = response.header.typeID.id;
+        this.response = response;
     }
 
     @Override

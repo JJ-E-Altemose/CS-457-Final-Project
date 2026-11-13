@@ -1,5 +1,7 @@
 package com.viperthesniperstudios.protocol;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,4 +42,19 @@ public abstract class Message
     public abstract Message newMessageFromStream(MessageHeader header, InputStream inputStream) throws IOException;
 
     public abstract void writeToStream(OutputStream outputStream) throws IOException;
+
+    public void writeFullMessageToStream(OutputStream outputStream) throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        this.writeToStream(bos);
+        bos.flush();
+
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+
+        dataOutputStream.writeInt(bos.toByteArray().length);
+        dataOutputStream.writeShort(0);
+
+        outputStream.write(bos.toByteArray());
+    }
 }

@@ -3,9 +3,9 @@ package com.viperthesniperstudios.minesweeper;
 import java.io.IOException;
 import java.util.Random;
 
-public class AbstractMultiRoundMineSweeper
+public abstract class AbstractMultiRoundMineSweeper
 {
-    public class GameEnd extends RuntimeException
+    /*public static class GameEnd extends RuntimeException
     {
         enum Type
         {
@@ -28,23 +28,24 @@ public class AbstractMultiRoundMineSweeper
 
     int BOARD_CHOICE_COUNT = 3;
 
-    public AbstractMultiRoundMineSweeper(int width, int height, int bombs, long randomSeed, int roundCount)
+    Minesweeper game;
+
+    public AbstractMultiRoundMineSweeper(int width, int height, int bombs, long randomSeed, int roundCount, Minesweeper game)
     {
         this.width = width;
         this.height = height;
         this.bombs = bombs;
         this.random = new Random(randomSeed);
         this.roundCount = roundCount;
+        this.game = game;
     }
 
-    public void selectBoard(int board)
-    {
-        throw new RuntimeException("ABSTACT");
-    }
+    public abstract void selectBoard(int board);
 
     public void play() throws IOException
-    {
-        AbstractMinesweeper game = new AbstractMinesweeper(width, height, bombs, random.nextLong());
+    {//todo ADD BOARD AT START
+        //AbstractMinesweeper game = new AbstractMinesweeper(width, height);
+        //game.fillBoard(bombs, random.nextLong());
 
         //IntStream.range(0, boards.length).forEach(i -> boards[i] = new Minesweeper(width, height, bombs, random.nextLong()));
 
@@ -77,13 +78,13 @@ public class AbstractMultiRoundMineSweeper
             {
                 game = newBoard.minesweeper;
             }
-            catch (GameWin ignored) {game = new AbstractMinesweeper(width, height, bombs, random.nextLong());}//todo TEMP NOT LEGAL
+            catch (GameWin ignored) {}//todo TEMP NOT LEGAL
         }
 
         throw new GameWin();
     }
 
-    private AbstractMinesweeper chooseBoard(AbstractMinesweeper[] boards) throws IOException
+    private Minesweeper chooseBoard(Minesweeper[] boards) throws IOException
     {
         for (int i = 0; i < boards.length; i++)
         {
@@ -106,5 +107,5 @@ public class AbstractMultiRoundMineSweeper
         System.out.println(selected);//todo ENTER
 
         return boards[selected];
-    }
+    }*/
 }

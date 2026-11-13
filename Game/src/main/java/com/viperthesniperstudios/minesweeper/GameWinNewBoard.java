@@ -2,9 +2,9 @@ package com.viperthesniperstudios.minesweeper;
 
 public class GameWinNewBoard extends RuntimeException
 {
-    AbstractMinesweeper minesweeper;
+    public Minesweeper minesweeper;
 
-    public GameWinNewBoard(AbstractMinesweeper minesweeper)
+    public GameWinNewBoard(Minesweeper minesweeper)
     {
         this.minesweeper = minesweeper;
     }

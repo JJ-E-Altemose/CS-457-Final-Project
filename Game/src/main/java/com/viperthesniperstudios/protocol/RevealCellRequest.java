@@ -10,11 +10,19 @@ public class RevealCellRequest extends Message
     /**
      * uint8
      */
-    short x, y;
+    public short x, y;
 
     protected RevealCellRequest(MessageHeader header)
     {
         super(header);
+    }
+
+    public RevealCellRequest(short x, short y)
+    {
+        super(new MessageHeader(0, TypeID.REVEAL_CELL_REQUEST));
+
+        this.x = x;
+        this.y = y;
     }
 
     @Override
@@ -39,7 +47,9 @@ public class RevealCellRequest extends Message
 
         header.writeToStream(outputStream);
 
-        dataOutputStream.writeShort(x);
-        dataOutputStream.writeShort(y);
+        dataOutputStream.write(x);
+        dataOutputStream.write(y);
+
+        dataOutputStream.flush();
     }
 }

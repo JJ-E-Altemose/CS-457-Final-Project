@@ -1,6 +1,4 @@
-package com.viperthesniperstudios.client;
-
-import com.viperthesniperstudios.Main;
+package com.viperthesniperstudios.minesweeper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +15,8 @@ public class Key
         RIGHT_ARROW,
         UP_ARROW,
         DOWN_ARROW,
-        ENTER
+        ENTER,
+        TAB
     }
 
     public Key(char character)
@@ -51,7 +50,11 @@ public class Key
 
         if(codeBuffer.get(0) == 10)
         {
-            return new Key(Key.Type.ENTER);
+            return new Key(Type.ENTER);
+        }
+        if(codeBuffer.get(0) == 9)
+        {
+            return new Key(Type.TAB);
         }
 
         if(codeBuffer.get(1) == 27 && codeBuffer.get(2) == 91)

@@ -10,13 +10,23 @@ public class GameState extends Message
     /**
      * uint8
      */
-    short width, height;
+    public short width, height;
 
-    CellByte[][] yourBoard, otherBoard;
+    public CellByte[][] yourBoard, otherBoard;
 
     protected GameState(MessageHeader header)
     {
         super(header);
+    }
+
+    public GameState(int width, int height, CellByte[][] yourBoard, CellByte[][] otherBoard)
+    {
+        super(new MessageHeader(0, TypeID.GAME_STATE));
+        this.width = (short) width;
+        this.height = (short) height;
+
+        this.yourBoard = yourBoard;
+        this.otherBoard = otherBoard;
     }
 
     @Override
@@ -71,8 +81,8 @@ public class GameState extends Message
 
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
 
-        dataOutputStream.writeShort(width);
-        dataOutputStream.writeShort(height);
+        dataOutputStream.write(width);
+        dataOutputStream.write(height);
 
         writeBoard(yourBoard, outputStream);
         writeBoard(otherBoard, outputStream);

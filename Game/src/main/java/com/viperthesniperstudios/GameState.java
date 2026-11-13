@@ -4,8 +4,14 @@ import com.viperthesniperstudios.protocol.CellByte;
 
 public class GameState
 {
-    long lastFlaggedCorrectlyTime;
-    int flaggedBombCount;
-    int roundsComplete;
-    boolean isAlive;
+    public long lastFlaggedCorrectlyTime;
+    public long roundEndTime;//TODO ADD SPEC
+    public int flaggedBombCount;
+    public int roundsComplete;
+    public boolean isAlive;
+
+    public void selectBoard()
+    {
+        //todo IMPLEMENT;
+    }
 }

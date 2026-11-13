@@ -14,6 +14,14 @@ public class FlagCellRequest extends Message
         super(header);
     }
 
+    public FlagCellRequest(short x, short y)
+    {
+        super(new MessageHeader(0, TypeID.FLAG_CELL_REQUEST));
+
+        this.x = x;
+        this.y = y;
+    }
+
     @Override
     public Message readFromStream(InputStream inputStream) throws IOException
     {
@@ -36,7 +44,7 @@ public class FlagCellRequest extends Message
 
         header.writeToStream(outputStream);
 
-        dataOutputStream.writeShort(x);
-        dataOutputStream.writeShort(y);
+        dataOutputStream.write(x);
+        dataOutputStream.write(y);
     }
 }

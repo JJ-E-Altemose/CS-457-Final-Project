@@ -1,0 +1,173 @@
+package com.viperthesniperstudios.server;
+
+import com.viperthesniperstudios.minesweeper.GameLoss;
+import com.viperthesniperstudios.minesweeper.GameWin;
+import com.viperthesniperstudios.protocol.FlagCellRequest;
+import com.viperthesniperstudios.protocol.FlagCellResponse;
+import com.viperthesniperstudios.protocol.GameEnd;
+import com.viperthesniperstudios.protocol.GameState;
+import com.viperthesniperstudios.protocol.Message;
+import com.viperthesniperstudios.protocol.MessageFactory;
+import com.viperthesniperstudios.protocol.RevealCellRequest;
+import com.viperthesniperstudios.protocol.RevealCellResponse;
+import com.viperthesniperstudios.protocol.RoundEnd;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class ClientHandler
+{
+    private static int MAX_ROUNDS = 3;
+
+    public long lastFlaggedCorrectlyTime;
+    public long lastRevealedTime;
+    //public long roundEndTime;//TODO ADD SPEC
+    public int flaggedBombCount;
+    public int roundsComplete;
+    public boolean isAlive;
+
+    private Socket socket;
+    private InputStream inputStream;
+    private OutputStream outputStream;
+    private Minesweeper minesweeper;
+
+    public ClientHandler(Socket clientSocket) throws IOException
+    {
+        this.socket = clientSocket;
+        this.inputStream = clientSocket.getInputStream();
+        this.outputStream = clientSocket.getOutputStream();
+        this.minesweeper = new Minesweeper(7,7,8,42);//todo fix config
+    }
+
+    public void handle() throws IOException
+    {
+        while (true)
+        {
+            handleMessage(readMessage());
+        }
+    }
+
+    private Message readMessage() throws IOException
+    {
+        return MessageFactory.getMessage(inputStream);
+    }
+
+    private void handleMessage(Message message) throws IOException
+    {
+        switch (message.header.typeID)
+        {
+            case REVEAL_CELL_REQUEST ->
+            {
+                callHandler(
+                        this::handleRevealCellRequest,
+                        RevealCellRequest.class,
+                        message);
+            }
+            case SELECT_BOARD_RESPONSE ->
+            {
+                //todo ADD
+            }
+            case FLAG_CELL_REQUEST ->
+            {
+                callHandler(
+                        this::handleFlagCellRequest,
+                        FlagCellRequest.class,
+                        message);
+            }
+            case UNACCEPTABLE ->
+            {
+            }
+            default ->
+            {
+                //todo UNACCEPTABLE
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface Handler <T>
+    {
+        void handle(T message) throws IOException;
+    }
+
+    private <T extends Message> void callHandler(Handler<T> handler, Class<T> clazz, Message message) throws IOException
+    {
+        if(clazz.isInstance(message))
+        {
+            handler.handle(clazz.cast(message));
+        }
+        else
+        {
+            throw new IllegalArgumentException("TypeID and class do not match");
+        }
+    }
+
+    private void handleFlagCellRequest(FlagCellRequest request) throws IOException
+    {
+        try
+        {
+            minesweeper.flagCell(request.x, request.y);
+
+            if(minesweeper.getCell(request.x, request.y).isBomb())
+            {
+                lastFlaggedCorrectlyTime = System.nanoTime();
+                flaggedBombCount++;
+            }
+        }
+        catch (IndexOutOfBoundsException e)
+        {
+            new FlagCellResponse(FlagCellResponse.Code.INVALID)
+                    .writeFullMessageToStream(outputStream);
+        }
+        new FlagCellResponse(FlagCellResponse.Code.SUCCESS)
+                .writeFullMessageToStream(outputStream);
+    }
+
+    private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException
+    {
+        //todo DROP ALREADY REVEAL, I REALLY CANT BE ASSED
+        try
+        {
+            lastRevealedTime = System.nanoTime();
+            minesweeper.revealCell(revealCellRequest.x, revealCellRequest.y);
+        }
+        catch (IndexOutOfBoundsException e)
+        {
+            new RevealCellResponse(RevealCellResponse.ReturnCode.INVALID_CELL_ERROR,
+                    null).writeFullMessageToStream(outputStream);
+        }
+        catch (GameWin e)
+        {
+            if(roundsComplete < MAX_ROUNDS){
+                //todo: wait till other done
+
+                //todo: IF OTHER FASTER THAN YOU SELECT
+                //todo: ELSE WAIT
+                //new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
+                //        new RoundEnd()).writeFullMessageToStream(outputStream);
+            }
+
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.WIN)).writeFullMessageToStream(outputStream);
+
+            //todo HANDLE ACTUAL END
+        }
+        catch (GameLoss e)
+        {
+            this.isAlive = false;//todo HANDLE ACTUAL END
+
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
+        }
+
+        new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_STATE_RETURN,
+                    new GameState(
+                            minesweeper.getWidth(),
+                            minesweeper.getHeight(),
+                            minesweeper.getBoard(),
+                            minesweeper.getBoard()))
+                    .writeFullMessageToStream(outputStream);//todo ACTUALLY RETURN OTHER BOARD
+    }
+}

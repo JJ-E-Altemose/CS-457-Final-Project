@@ -10,19 +10,23 @@ public class GameEnd extends Message
     /**
      * uint2
      */
-    Type type;
+    public Type type;
 
     protected GameEnd(MessageHeader header)
     {
         super(header);
     }
 
+    public GameEnd(Type type)
+    {
+        super(new MessageHeader(0, TypeID.GAME_END));
+        this.type = type;
+    }
+
     @Override
     public Message readFromStream(InputStream inputStream) throws IOException
     {
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
-
-        this.type = Type.values()[dataInputStream.readShort()];
+        this.type = Message.getEnumFromOrdinal(Type.values(), inputStream.read());
 
         return this;
     }
