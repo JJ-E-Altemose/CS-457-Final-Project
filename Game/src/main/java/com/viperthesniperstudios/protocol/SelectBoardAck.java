@@ -6,18 +6,25 @@ import java.io.OutputStream;
 
 public class SelectBoardAck extends Message
 {
-    enum Code
+    public enum Code
     {
         SUCCESS,
         INVALID_BOARD_NUMBER,
         NOT_YOUR_TURN
     }
 
-    Code code;
+    public Code code;
 
     protected SelectBoardAck(MessageHeader header)
     {
         super(header);
+    }
+
+    public SelectBoardAck(Code code)
+    {
+        super(new MessageHeader(0, TypeID.SELECT_BOARD_ACK));
+
+        this.code = code;
     }
 
     @Override

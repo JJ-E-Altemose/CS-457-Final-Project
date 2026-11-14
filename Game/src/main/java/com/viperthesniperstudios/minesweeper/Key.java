@@ -3,6 +3,10 @@ package com.viperthesniperstudios.minesweeper;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Represents a key pressed in the terminal
+ * @apiNote Not at all fully complete
+ */
 public class Key
 {
     public final char character;

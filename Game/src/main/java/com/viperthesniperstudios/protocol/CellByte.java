@@ -89,6 +89,15 @@ public class CellByte
 
     public String revealedCharacter()
     {
-        return isFlagged() ? "F" : (isBomb() && !isHidden() ? "X" : "" + getNearByBombs());
+        if(isBomb())
+        {
+            return "\uD83D\uDCA3";
+        }
+        else
+        {
+            return "" + getNearByBombs();
+        }
+
+        //return isFlagged() ? "F" : (isBomb() && !isHidden() ? "X" : "" + getNearByBombs());
     }
 }

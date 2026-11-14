@@ -1,5 +1,8 @@
 package com.viperthesniperstudios.minesweeper;
 
+/**
+ * Handles a buffer for raw input so can detect things like arrow keys
+ */
 public class CodeBuffer
 {
     int[] buffer;

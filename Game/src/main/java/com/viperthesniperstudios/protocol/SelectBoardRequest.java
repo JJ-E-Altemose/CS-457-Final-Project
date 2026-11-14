@@ -8,11 +8,28 @@ import java.io.OutputStream;
 public class SelectBoardRequest extends Message
 {
     short width, height;
-    CellByte[][] board1, board2, board3;
+    public CellByte[][] board1, board2, board3;
 
     protected SelectBoardRequest(MessageHeader header)
     {
         super(header);
+    }
+
+    public SelectBoardRequest(int width, int height, CellByte[][][] boards)
+    {
+        super(new MessageHeader(0, TypeID.SELECT_BOARD_REQUEST));
+
+        if(boards.length != 3)
+        {
+            throw new RuntimeException("3 Options required");
+        }
+
+        this.width = (short) width;
+        this.height = (short) height;
+
+        this.board1 = boards[0];
+        this.board2 = boards[1];
+        this.board3 = boards[2];
     }
 
     @Override
@@ -68,8 +85,8 @@ public class SelectBoardRequest extends Message
 
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
 
-        dataOutputStream.writeShort(width);
-        dataOutputStream.writeShort(height);
+        dataOutputStream.write(width);
+        dataOutputStream.write(height);
 
         writeBoard(board1, outputStream);
         writeBoard(board2, outputStream);

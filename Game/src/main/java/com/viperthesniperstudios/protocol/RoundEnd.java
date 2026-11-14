@@ -23,21 +23,21 @@ public class RoundEnd extends Message
     /**
      * uint1
      */
-    enum Type
+    public enum Type
     {
         WAITING,
         SELECTING
     }
 
-    Type type;
+    public Type type;
 
     /**
      * 3 Bytes of padding
      */
 
-    short version;
-    short typeID;
-    Message response;
+    public short version;
+    public int typeID;
+    public Message response;
 
     @Override
     public Message readFromStream(InputStream inputStream) throws IOException
@@ -49,10 +49,10 @@ public class RoundEnd extends Message
         inputStream.readNBytes(3);
 
         version = dataInputStream.readShort();
-        typeID = dataInputStream.readShort();
+        typeID = dataInputStream.readInt();
 
-        response = type == Type.WAITING ?
-                new SelectBoardResponse(MessageHeader.NO_HEADER).readFromStream(inputStream)
+        response = type == Type.SELECTING ?
+                new SelectBoardRequest(MessageHeader.NO_HEADER).readFromStream(inputStream)
                 : null;
 
         return this;
@@ -70,6 +70,10 @@ public class RoundEnd extends Message
         header.writeToStream(outputStream);
 
         outputStream.write(type.ordinal());
+
+        outputStream.write(0);
+        outputStream.write(0);
+        outputStream.write(0);
 
         response.writeToStream(outputStream);
     }

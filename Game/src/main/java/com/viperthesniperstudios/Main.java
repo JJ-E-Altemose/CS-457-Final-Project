@@ -10,16 +10,20 @@ import com.viperthesniperstudios.server.ClientHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.Semaphore;
 
 public class Main
 {
     public static void main(String[] args) throws IOException, InterruptedException
     {
+        Semaphore s = new Semaphore(1);
 
+        s.acquire();
         Thread t = new Thread(() -> {
             try
             {
-                ServerSocket serverSocket = new ServerSocket(5999);
+                ServerSocket serverSocket = new ServerSocket(5992);
+                s.release();
                 Socket client = serverSocket.accept();
 
 
@@ -32,9 +36,11 @@ public class Main
             }
         });
         t.start();
+        s.acquire();
+        s.release();
 
 
-        Minesweeper minesweeper = new Minesweeper(7,7, new Socket("127.0.0.1", 5999));
+        Minesweeper minesweeper = new Minesweeper(7,7, new Socket("127.0.0.1", 5992));
         //AbstractMultiRoundMineSweeper minesweeper = new AbstractMultiRoundMineSweeper(7,7,8,42, 2);
 
         try

@@ -9,11 +9,17 @@ public class SelectBoardResponse extends Message
     /**
      * uint8
      */
-    int boardIndex;
+    public int boardIndex;
 
     protected SelectBoardResponse(MessageHeader header)
     {
         super(header);
+    }
+
+    public SelectBoardResponse(int boardIndex)
+    {
+        super(new MessageHeader(0, TypeID.SELECT_BOARD_RESPONSE));
+        this.boardIndex = boardIndex;
     }
 
     @Override

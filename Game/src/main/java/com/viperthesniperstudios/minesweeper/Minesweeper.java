@@ -2,11 +2,14 @@ package com.viperthesniperstudios.minesweeper;
 
 import com.viperthesniperstudios.protocol.CellByte;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * Contains the basic minesweeper implementation for logic and uses Exceptions
+ * for terminal conditions like {@link  GameWin game wins} and {@link GameLoss game losses}
+ */
 public class Minesweeper
 {
     protected CellByte[][] board;
@@ -90,7 +93,7 @@ public class Minesweeper
             {
                 if(x == targetX && y == targetY)
                 {
-                    continue;//todo DONT CONT SELF
+                    continue;
                 }
 
                 bombCount = board[x][y].isBomb() ? bombCount+1 : bombCount;

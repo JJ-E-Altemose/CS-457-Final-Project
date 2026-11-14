@@ -11,6 +11,11 @@ public class Unacceptable extends Message
         super(header);
     }
 
+    public Unacceptable()
+    {
+        super(new MessageHeader(0, TypeID.UNACCEPTABLE));
+    }
+
     @Override
     public Message readFromStream(InputStream inputStream) throws IOException
     {
