@@ -13,8 +13,6 @@ public class Server
     {
         Arguments arguments = new Arguments(args);
 
-        Semaphore s = new Semaphore(1);
-
         Semaphore boardSelectLock = new Semaphore(0);
         //TODO CHange spec for boardSelectLock
 
@@ -48,9 +46,8 @@ public class Server
         }
 
         @Override
-        public void start()
+        public void run()
         {
-
             try
             {
                 clientHandler.handle(client, otherClientHandler, boardSelectLock);

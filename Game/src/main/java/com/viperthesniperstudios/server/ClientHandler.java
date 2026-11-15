@@ -93,7 +93,7 @@ public class ClientHandler
         return MessageFactory.getMessage(inputStream);
     }
 
-    private synchronized void handleMessage(Message message) throws IOException, InterruptedException
+    private void handleMessage(Message message) throws IOException, InterruptedException
     {
         switch (message.header.typeID)
         {
@@ -193,6 +193,7 @@ public class ClientHandler
 
             new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
                     new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
+
         }
 
         new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_STATE_RETURN,
@@ -262,11 +263,6 @@ public class ClientHandler
                     new GameEnd(GameEnd.Type.WIN))
                     .writeFullMessageToStream(outputStream);
         }
-    }
-
-    public synchronized CellByte[][] getBoard()
-    {
-        return this.minesweeper.getBoard();
     }
 
     private void handelBoardSelect() throws IOException

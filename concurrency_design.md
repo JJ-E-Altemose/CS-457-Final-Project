@@ -20,3 +20,13 @@ Each thread accesses the other object when a request comes in and handles the st
 based of that and the accesses to game state
 
 Because of java object synchronization, this is very simple and not complex
+
+# Changes
+Since one client never writes to a another except for board select, nothing needs
+to be synchronized, the only part that does is the the board select and round end
+which can easily be achieved with spin locks, and I did a spin wait for the waiting
+for both clients to finish but used an binarysemaphore for the board select for reasons
+of i wanted to and its better than just doing nothing.
+
+The semaphore starts unlocked
+//todo DIAGRAM
