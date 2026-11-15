@@ -75,6 +75,13 @@ public class RoundEnd extends Message
         outputStream.write(0);
         outputStream.write(0);
 
-        response.writeToStream(outputStream);
+        if(response != null)
+        {
+            response.writeToStream(outputStream);
+        }
+        else
+        {
+            new Unacceptable().header.writeToStream(outputStream);
+        }
     }
 }

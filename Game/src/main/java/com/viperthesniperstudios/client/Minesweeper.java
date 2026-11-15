@@ -5,7 +5,6 @@ import com.viperthesniperstudios.minesweeper.GameLoss;
 import com.viperthesniperstudios.minesweeper.GameWin;
 import com.viperthesniperstudios.minesweeper.IMinesweeper;
 import com.viperthesniperstudios.minesweeper.Key;
-import com.viperthesniperstudios.minesweeper.SelectBoard;
 import com.viperthesniperstudios.protocol.CellByte;
 import com.viperthesniperstudios.protocol.FlagCellRequest;
 import com.viperthesniperstudios.protocol.FlagCellResponse;
@@ -18,13 +17,15 @@ import com.viperthesniperstudios.protocol.RevealCellResponse;
 import com.viperthesniperstudios.protocol.SelectBoardAck;
 import com.viperthesniperstudios.protocol.SelectBoardRequest;
 import com.viperthesniperstudios.protocol.SelectBoardResponse;
+import com.viperthesniperstudios.protocol.TypeID;
+import com.viperthesniperstudios.protocol.Unacceptable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.Socket;
-import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 
 import static com.viperthesniperstudios.protocol.RoundEnd.Type.SELECTING;
 
@@ -64,19 +65,14 @@ public class Minesweeper implements IMinesweeper
         {
             new FlagCellRequest((short) x, (short) y).writeFullMessageToStream(outputStream);
 
-            Message response = MessageFactory.getMessage(inputStream);
+            FlagCellResponse flagCellResponse = getMessageOfType(TypeID.FLAG_CELL_RESPONSE);
 
-            if(response instanceof FlagCellResponse flagCellResponse)
+            if(flagCellResponse.code == FlagCellResponse.Code.INVALID)
             {
-                if(flagCellResponse.code == FlagCellResponse.Code.INVALID)
-                {
-                    throw new IndexOutOfBoundsException();//todo UGLY NESTING
-                }
-
-                board[x][y].setFlagged(true);
-                return;
+                throw new IndexOutOfBoundsException();
             }
-            throw new IOException("Illegal message type");
+
+            board[x][y].setFlagged(true);
         }
         catch (IOException e)
         {
@@ -84,6 +80,23 @@ public class Minesweeper implements IMinesweeper
             //throw new Disconnect();
         }
 //todo IMPLEMENT
+    }
+
+    private <T extends Message> T getMessageOfType(TypeID typeID) throws IOException
+    {
+        Message message = MessageFactory.getMessage(inputStream);
+
+        if(message.header.typeID != typeID)
+        {
+            new Unacceptable().writeFullMessageToStream(outputStream);
+        }
+
+        Class<T> clazz = Arrays.stream(TypeID.values())
+                .filter(e -> e == typeID)
+                .findFirst().get()
+                .getMessageClass();
+
+        return clazz.cast(message);
     }
 
     @Override
@@ -219,6 +232,7 @@ public class Minesweeper implements IMinesweeper
         }
         else
         {
+
             throw new RuntimeException("INVALID MESSAGE TYPE");
         }
         //selectBoard(selected);
@@ -291,6 +305,8 @@ public class Minesweeper implements IMinesweeper
                 }
             }
 
+            System.out.println("\n\n\n\n\n\n");
+            //purge a few lines make it easier if ye scroll on accident
             System.out.print("\033[H\033[2J");
 
             mineSweeperTerminalPrint(cursorX, cursorY);

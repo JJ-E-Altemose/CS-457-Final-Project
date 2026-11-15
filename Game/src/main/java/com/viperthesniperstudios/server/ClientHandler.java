@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 public class ClientHandler
 {
@@ -30,10 +32,15 @@ public class ClientHandler
 
     public long lastFlaggedCorrectlyTime;
     public long lastRevealedTime;
+    public long roundStartTime;
+    public long totalRoundTime = 0;
+    public long lastRoundTime = 0;
     //public long roundEndTime;//TODO ADD SPEC
     public int flaggedBombCount;
-    public int roundsComplete;
-    public boolean isAlive;
+    public int roundsComplete = 0;
+    public boolean isAlive = true;
+
+    public Semaphore boardSelectLock;
 
     private Socket socket;
     private InputStream inputStream;
@@ -42,16 +49,40 @@ public class ClientHandler
 
     private Random random = new Random(95);//todo FIX RANDOM
 
-    public ClientHandler(Socket clientSocket) throws IOException
+    ClientHandler otherClient;
+
+    public ClientHandler() throws IOException
     {
-        this.socket = clientSocket;
-        this.inputStream = clientSocket.getInputStream();
-        this.outputStream = clientSocket.getOutputStream();
         this.minesweeper = new Minesweeper(7,7,8,random.nextLong());//todo fix config
     }
 
-    public void handle() throws IOException
+    private <T extends Message> T getMessageOfType(TypeID typeID) throws IOException
     {
+        Message message = MessageFactory.getMessage(inputStream);
+
+        if(message.header.typeID != typeID)
+        {
+            new Unacceptable().writeFullMessageToStream(outputStream);
+        }
+
+        Class<T> clazz = Arrays.stream(TypeID.values())
+                .filter(e -> e == typeID)
+                .findFirst().get()
+                .getMessageClass();
+
+        return clazz.cast(message);
+    }
+
+    public void handle(Socket socket, ClientHandler otherClient, Semaphore boardSelectLock) throws IOException, InterruptedException
+    {
+        this.socket = socket;
+        this.inputStream = socket.getInputStream();
+        this.outputStream = socket.getOutputStream();
+        this.otherClient = otherClient;
+
+        roundStartTime = System.nanoTime();//todo UPDATE WITH TOTAL ROUND TIME
+        this.boardSelectLock = boardSelectLock;
+
         while (true)
         {
             handleMessage(readMessage());
@@ -63,7 +94,7 @@ public class ClientHandler
         return MessageFactory.getMessage(inputStream);
     }
 
-    private void handleMessage(Message message) throws IOException
+    private synchronized void handleMessage(Message message) throws IOException, InterruptedException
     {
         switch (message.header.typeID)
         {
@@ -76,8 +107,8 @@ public class ClientHandler
             }
             case SELECT_BOARD_RESPONSE ->
             {
-                //TODO IN OTHER SEGMENT NOTE PROPERLY
-                //todo ADD
+                new SelectBoardAck(SelectBoardAck.Code.NOT_YOUR_TURN)
+                        .writeFullMessageToStream(outputStream);
             }
             case FLAG_CELL_REQUEST ->
             {
@@ -88,10 +119,13 @@ public class ClientHandler
             }
             case UNACCEPTABLE ->
             {
+                //We consider an unacceptable from the client as a time to nope out
+                throw new IllegalStateException("UNACCEPTABLE RECEIVED");
             }
             default ->
             {
-                //todo UNACCEPTABLE
+                new Unacceptable()
+                        .writeFullMessageToStream(outputStream);
             }
         }
     }
@@ -99,10 +133,10 @@ public class ClientHandler
     @FunctionalInterface
     public interface Handler <T>
     {
-        void handle(T message) throws IOException;
+        void handle(T message) throws IOException, InterruptedException;
     }
 
-    private <T extends Message> void callHandler(Handler<T> handler, Class<T> clazz, Message message) throws IOException
+    private <T extends Message> void callHandler(Handler<T> handler, Class<T> clazz, Message message) throws IOException, InterruptedException
     {
         if(clazz.isInstance(message))
         {
@@ -135,7 +169,7 @@ public class ClientHandler
                 .writeFullMessageToStream(outputStream);
     }
 
-    private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException
+    private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException, InterruptedException
     {
         //todo DROP ALREADY REVEAL, I REALLY CANT BE ASSED
         try
@@ -150,22 +184,8 @@ public class ClientHandler
         }
         catch (GameWin e)
         {
-            if(roundsComplete < MAX_ROUNDS)
-            {
-                //todo: wait till other done
-
-                //todo: IF OTHER FASTER THAN YOU SELECT
-                //todo: ELSE WAIT
-                //new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
-                //        new RoundEnd()).writeFullMessageToStream(outputStream);
-            }
-
-            //new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
-            //        new GameEnd(GameEnd.Type.WIN)).writeFullMessageToStream(outputStream);
-            handelBoardSelect();
+            handleRoundWin();
             return;
-
-            //todo HANDLE ACTUAL END
         }
         catch (GameLoss e)
         {
@@ -184,8 +204,101 @@ public class ClientHandler
                     .writeFullMessageToStream(outputStream);//todo ACTUALLY RETURN OTHER BOARD
     }
 
+    private void handleRoundWin() throws IOException, InterruptedException
+    {
+        //The round is now over so we are free to release the lock
+
+        lastRoundTime = System.nanoTime() - roundStartTime;
+        totalRoundTime += lastRoundTime;
+        roundsComplete += 1;
+
+        while (otherClient.isAlive && (otherClient.roundsComplete < roundsComplete))
+        {
+            //SPIN WAIT FOR THE W
+        }
+
+        if(!otherClient.isAlive)
+        {
+            throw new GameWin();//todo NO THROW FROM HERE, NESTED RETURN
+        }
+
+        //while (otherClient.roundsComplete != roundsComplete) {}
+        //incase start somehow stagered so long that player completes round before the other even start
+        //should never happen
+
+        if(roundsComplete < MAX_ROUNDS)
+        {
+            //todo BOTH SELECT CASE CAUSE OF TIMING
+            if(otherClient.lastRoundTime > lastRoundTime)
+            {
+                handelBoardSelect();
+                boardSelectLock.release();//LETS OTHER CLIENT CONTINUE
+            }
+            else
+            {
+                boardSelectLock.acquire();//WAITS FOR CLIENT TO SELECT
+                new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
+                        new RoundEnd(RoundEnd.Type.WAITING, null))
+                        .writeFullMessageToStream(outputStream);
+            }//todo check
+
+
+
+            //todo: wait till other done
+
+            //todo: IF OTHER FASTER THAN YOU SELECT
+            //todo: ELSE WAIT
+            //new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
+            //        new RoundEnd()).writeFullMessageToStream(outputStream);
+        }
+        else
+        {
+            decideWinner();
+        }
+
+        //roundLock.acquire();
+
+
+
+        //new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+        //        new GameEnd(GameEnd.Type.WIN)).writeFullMessageToStream(outputStream);
+        //handelBoardSelect();
+        return;
+
+        //todo HANDLE ACTUAL END
+    }
+
+    private void decideWinner() throws IOException
+    {
+        if(otherClient.totalRoundTime < totalRoundTime)
+        {
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.LOSS))
+                    .writeFullMessageToStream(outputStream);
+        }
+        else if (otherClient.totalRoundTime == totalRoundTime)
+        {
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.DRAW))
+                    .writeFullMessageToStream(outputStream);
+        }
+        else
+        {
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.WIN))
+                    .writeFullMessageToStream(outputStream);
+        }
+    }
+
+    public synchronized CellByte[][] getBoard()
+    {
+        return this.minesweeper.getBoard();
+    }
+
     private void handelBoardSelect() throws IOException
     {
+        minesweeper.setBoard(Minesweeper.createBoardFromSeed(7,7,8, random.nextLong()));//NEED A NEW BOARD FOR YOUR GAME
+
         CellByte[][][] boards = new CellByte[][][]
                 {
                     Minesweeper.createBoardFromSeed(7,7,8, random.nextLong()),
@@ -195,7 +308,7 @@ public class ClientHandler
 
         SelectBoardRequest selectBoardRequest =
                 new SelectBoardRequest(7,7, boards);
-
+//tripled nested :0
         new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
                 new RoundEnd(RoundEnd.Type.SELECTING, selectBoardRequest))
                 .writeFullMessageToStream(outputStream);
@@ -208,14 +321,14 @@ public class ClientHandler
         }
 
         if(response instanceof SelectBoardResponse selectBoardResponse)
-        {//todo SET OTHERS BOARD
+        {
             if(selectBoardResponse.boardIndex >= boards.length || selectBoardResponse.boardIndex < 0)
             {
                 new SelectBoardAck(SelectBoardAck.Code.INVALID_BOARD_NUMBER)
                         .writeFullMessageToStream(outputStream);
             }
 
-            minesweeper.setBoard(boards[selectBoardResponse.boardIndex]);
+            otherClient.minesweeper.setBoard(boards[selectBoardResponse.boardIndex]);
         }
         else
         {

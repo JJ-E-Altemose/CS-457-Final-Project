@@ -31,6 +31,11 @@ public enum TypeID
         return id;
     }
 
+    public <T extends Message> Class<T> getMessageClass()
+    {
+        return (Class<T>) type.getClass();
+    }
+
     public static TypeID getType(int id)
     {
         return Arrays.stream(TypeID.values())
