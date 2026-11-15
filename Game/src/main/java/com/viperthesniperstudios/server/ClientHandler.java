@@ -261,7 +261,7 @@ public class ClientHandler
                 new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
                         new RoundEnd(RoundEnd.Type.WAITING, null))
                         .writeFullMessageToStream(outputStream);
-            }//todo check
+            }
         }
         else
         {
@@ -331,7 +331,7 @@ public class ClientHandler
         else
         {
             throw new RuntimeException("Illegal type");
-        }//todo CODE NOT YOUR TURN
+        }
 
         new SelectBoardAck(SelectBoardAck.Code.SUCCESS)
                 .writeFullMessageToStream(outputStream);

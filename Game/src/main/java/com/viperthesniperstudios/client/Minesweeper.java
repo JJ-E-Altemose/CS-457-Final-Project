@@ -76,10 +76,8 @@ public class Minesweeper implements IMinesweeper
         }
         catch (IOException e)
         {
-            throw new UncheckedIOException(e);//todo FIX TEMP
-            //throw new Disconnect();
+            throw new UncheckedIOException(e);
         }
-//todo IMPLEMENT
     }
 
     private <T extends Message> T getMessageOfType(TypeID typeID) throws IOException

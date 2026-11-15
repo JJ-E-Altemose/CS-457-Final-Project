@@ -47,9 +47,6 @@ public class MessageHeader
     public void writeToStream(OutputStream outputStream) throws IOException
     {
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-//todo cleanup
-        //dataOutputStream.writeInt((int) length);
-        //dataOutputStream.writeShort(protocolVersion);
         dataOutputStream.writeShort(version);
         dataOutputStream.writeInt(typeID.id);
     }

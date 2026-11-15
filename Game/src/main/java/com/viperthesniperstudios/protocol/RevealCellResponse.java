@@ -78,11 +78,6 @@ public class RevealCellResponse extends Message
         outputStream.write(0);
         outputStream.write(0);
 
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-        //TODO CHECK NESTING
-        //dataOutputStream.writeShort(version);
-        //dataOutputStream.writeInt(typeID);
-
         if(returnCode != ReturnCode.INVALID_CELL_ERROR &&
            returnCode != ReturnCode.ALREADY_REVEALED_ERROR)
         {

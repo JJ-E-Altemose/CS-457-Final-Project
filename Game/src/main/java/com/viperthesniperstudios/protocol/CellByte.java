@@ -11,8 +11,6 @@ public class CellByte
         flagged = (byteB & 0b0000_0001) != 0;
         bomb = (byteB & 0b0000_0100) != 0;
         hidden = (byteB & 0b0000_1000) != 0;
-
-        //todo IMPLEMENT
     }
 
     public CellByte() {}
@@ -32,7 +30,7 @@ public class CellByte
         value |= bomb ? 0b0000_0100 : 0b0000_0000;
         value |= hidden ? 0b0000_1000 : 0b0000_0000;
 
-        return value; //todo CHECK;
+        return value;
     }
 
     public void setFlagged(boolean value)
