@@ -1,10 +1,8 @@
 package com.viperthesniperstudios.client;
 
-import com.viperthesniperstudios.minesweeper.CodeBuffer;
 import com.viperthesniperstudios.minesweeper.GameLoss;
 import com.viperthesniperstudios.minesweeper.GameWin;
 import com.viperthesniperstudios.minesweeper.IMinesweeper;
-import com.viperthesniperstudios.minesweeper.Key;
 import com.viperthesniperstudios.protocol.CellByte;
 import com.viperthesniperstudios.protocol.FlagCellRequest;
 import com.viperthesniperstudios.protocol.FlagCellResponse;

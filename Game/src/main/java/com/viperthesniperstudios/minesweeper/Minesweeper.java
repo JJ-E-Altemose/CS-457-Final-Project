@@ -117,7 +117,7 @@ public class Minesweeper
     {
         if(board[x][y].isBomb())
         {
-            throw new GameLoss("");//todo DIE
+            throw new GameLoss();
         }
 
         board[x][y].setHidden(false);

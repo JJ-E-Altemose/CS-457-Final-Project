@@ -1,4 +1,4 @@
-package com.viperthesniperstudios.minesweeper;
+package com.viperthesniperstudios.client;
 
 /**
  * Handles a buffer for raw input so can detect things like arrow keys

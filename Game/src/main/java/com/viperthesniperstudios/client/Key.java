@@ -1,4 +1,4 @@
-package com.viperthesniperstudios.minesweeper;
+package com.viperthesniperstudios.client;
 
 import java.io.IOException;
 import java.io.InputStream;
