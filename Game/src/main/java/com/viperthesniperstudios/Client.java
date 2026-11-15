@@ -1,6 +1,7 @@
 package com.viperthesniperstudios;
 
 import com.viperthesniperstudios.client.Minesweeper;
+import com.viperthesniperstudios.minesweeper.GameDraw;
 import com.viperthesniperstudios.minesweeper.GameLoss;
 import com.viperthesniperstudios.minesweeper.GameWin;
 
@@ -41,7 +42,12 @@ public class Client
         catch (GameLoss e)
         {
             System.out.print("\033[H\033[2J");
-            System.out.println("You stinky");
+            System.out.println("You lost");
+        }
+        catch (GameDraw e)
+        {
+            System.out.print("\033[H\033[2J");
+            System.out.println("You somehow had a draw, like that's insane");
         }
     }
 

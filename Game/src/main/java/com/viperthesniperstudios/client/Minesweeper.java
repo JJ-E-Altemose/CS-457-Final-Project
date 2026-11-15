@@ -1,5 +1,6 @@
 package com.viperthesniperstudios.client;
 
+import com.viperthesniperstudios.minesweeper.GameDraw;
 import com.viperthesniperstudios.minesweeper.GameLoss;
 import com.viperthesniperstudios.minesweeper.GameWin;
 import com.viperthesniperstudios.minesweeper.IMinesweeper;
@@ -24,6 +25,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.viperthesniperstudios.protocol.RoundEnd.Type.SELECTING;
 
@@ -97,14 +99,47 @@ public class Minesweeper implements IMinesweeper
         return clazz.cast(message);
     }
 
+    class WaitingOnOtherPlayer extends Thread
+    {
+        AtomicBoolean isCanceled;
+
+        public WaitingOnOtherPlayer(AtomicBoolean isCanceled)
+        {
+            this.isCanceled = isCanceled;
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                Thread.sleep(250);
+            } catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            if(!isCanceled.get())
+            {
+                System.out.println("Waiting on other client");
+            }
+        }
+    }
+
     @Override
     public void revealCell(int x, int y)
     {
         try
         {
+            AtomicBoolean isCanceled = new AtomicBoolean(false);
+
+            new WaitingOnOtherPlayer(isCanceled).start();
+
             new RevealCellRequest((short) x, (short) y).writeFullMessageToStream(outputStream);
 
             Message response = MessageFactory.getMessage(inputStream);
+
+            isCanceled.set(true);
 
             if(response instanceof RevealCellResponse revealCellResponse)
             {
@@ -129,7 +164,7 @@ public class Minesweeper implements IMinesweeper
             {//todo missing branch, size mismatch cast fail
                 if(revealCellResponse.response instanceof GameState gameState)
                 {
-                    board = gameState.yourBoard;//todo HANDLE OTHER BOARD;
+                    board = gameState.yourBoard;
                     otherBoard = gameState.otherBoard;
                 }
             }
@@ -157,7 +192,7 @@ public class Minesweeper implements IMinesweeper
                         }
                         case DRAW ->
                         {
-                            throw new RuntimeException("NOT YET IMPL");//TODO IMPL
+                            throw new GameDraw();
                         }
                     }
                 }
@@ -192,6 +227,13 @@ public class Minesweeper implements IMinesweeper
                     {
                         throw new RuntimeException("Illegal message type");
                     }
+                }
+                else
+                {
+                    System.out.println("\n\n\n\n\n\n");
+                    //purge a few lines make it easier if ye scroll on accident
+                    System.out.print("\033[H\033[2J");
+                    System.out.println("Waiting for other player to pick a board for you");
                 }
             }
         }
@@ -233,10 +275,6 @@ public class Minesweeper implements IMinesweeper
 
             throw new RuntimeException("INVALID MESSAGE TYPE");
         }
-        //selectBoard(selected);
-        //System.out.println(selected);//todo ENTER
-
-        //return boards[selected];
     }
 
     public String boardToRevealedString(CellByte[][] board)

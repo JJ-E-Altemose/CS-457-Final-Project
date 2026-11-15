@@ -24,7 +24,11 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ClientHandler
 {
@@ -49,9 +53,11 @@ public class ClientHandler
     private Random random = new Random(95);//todo FIX RANDOM
 
     ClientHandler otherClient;
+    private CyclicBarrier barrier;
 
-    public ClientHandler() throws IOException
+    public ClientHandler(CyclicBarrier barrier) throws IOException
     {
+        this.barrier = barrier;
         this.minesweeper = new Minesweeper(7,7,8,random.nextLong());//todo fix config
     }
 
@@ -72,7 +78,7 @@ public class ClientHandler
         return clazz.cast(message);
     }
 
-    public void handle(Socket socket, ClientHandler otherClient, Semaphore boardSelectLock) throws IOException, InterruptedException
+    public void handle(Socket socket, ClientHandler otherClient) throws IOException, InterruptedException, BrokenBarrierException
     {
         this.socket = socket;
         this.inputStream = socket.getInputStream();
@@ -93,7 +99,7 @@ public class ClientHandler
         return MessageFactory.getMessage(inputStream);
     }
 
-    private void handleMessage(Message message) throws IOException, InterruptedException
+    private void handleMessage(Message message) throws IOException, InterruptedException, BrokenBarrierException
     {
         switch (message.header.typeID)
         {
@@ -133,10 +139,10 @@ public class ClientHandler
     @FunctionalInterface
     public interface Handler <T>
     {
-        void handle(T message) throws IOException, InterruptedException;
+        void handle(T message) throws IOException, InterruptedException, BrokenBarrierException;
     }
 
-    private <T extends Message> void callHandler(Handler<T> handler, Class<T> clazz, Message message) throws IOException, InterruptedException
+    private <T extends Message> void callHandler(Handler<T> handler, Class<T> clazz, Message message) throws IOException, InterruptedException, BrokenBarrierException
     {
         if(clazz.isInstance(message))
         {
@@ -169,7 +175,7 @@ public class ClientHandler
                 .writeFullMessageToStream(outputStream);
     }
 
-    private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException, InterruptedException
+    private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException, InterruptedException, BrokenBarrierException
     {
         //todo DROP ALREADY REVEAL, I REALLY CANT BE ASSED
         try
@@ -193,7 +199,15 @@ public class ClientHandler
 
             new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
                     new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
-
+            try
+            {
+                //*koolaid mans through your wall*
+                barrier.await(0, TimeUnit.NANOSECONDS);
+            }
+            catch (TimeoutException ignored)
+            {
+                //tell other thread it may go as it pleases
+            }
         }
 
         new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_STATE_RETURN,
@@ -201,25 +215,38 @@ public class ClientHandler
                             minesweeper.getWidth(),
                             minesweeper.getHeight(),
                             minesweeper.getBoard(),
-                            minesweeper.getBoard()))
+                            otherClient.minesweeper.getBoard()))
                     .writeFullMessageToStream(outputStream);//todo ACTUALLY RETURN OTHER BOARD
     }
 
-    private void handleRoundWin() throws IOException, InterruptedException
+    private void handleRoundWin() throws IOException, InterruptedException, BrokenBarrierException
     {
         lastRoundTime = System.nanoTime() - roundStartTime;
         totalRoundTime += lastRoundTime;
         roundsComplete += 1;
 
-        while (otherClient.isAlive && (otherClient.roundsComplete < roundsComplete))
+        /*while (otherClient.isAlive && (otherClient.roundsComplete < roundsComplete))
         {
             //SPIN WAIT FOR THE W
+        }*/
+
+        try
+        {
+            barrier.await();
+        }
+        catch (BrokenBarrierException e)
+        {
+            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                    new GameEnd(GameEnd.Type.WIN))
+                    .writeFullMessageToStream(outputStream);
+            return;
         }
 
+        /*
         if(!otherClient.isAlive)
         {
             throw new GameWin();//todo NO THROW FROM HERE, NESTED RETURN
-        }
+        }*/
 
         if(roundsComplete < MAX_ROUNDS)
         {
@@ -227,11 +254,11 @@ public class ClientHandler
             if(otherClient.lastRoundTime > lastRoundTime)
             {
                 handelBoardSelect();
-                boardSelectLock.release();//LETS OTHER CLIENT CONTINUE
+                //boardSelectLock.release();//LETS OTHER CLIENT CONTINUE
             }
             else
             {
-                boardSelectLock.acquire();//WAITS FOR CLIENT TO SELECT
+                //boardSelectLock.acquire();//WAITS FOR CLIENT TO SELECT
                 new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
                         new RoundEnd(RoundEnd.Type.WAITING, null))
                         .writeFullMessageToStream(outputStream);
@@ -241,6 +268,8 @@ public class ClientHandler
         {
             decideWinner();
         }
+
+        barrier.await();
     }
 
     private void decideWinner() throws IOException

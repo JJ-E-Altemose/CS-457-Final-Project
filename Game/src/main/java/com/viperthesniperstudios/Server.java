@@ -5,6 +5,8 @@ import com.viperthesniperstudios.server.ClientHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 
 public class Server
@@ -20,9 +22,10 @@ public class Server
         Socket client1 = serverSocket.accept();
         Socket client2 = serverSocket.accept();
 
+        CyclicBarrier barrier = new CyclicBarrier(2);
 
-        ClientHandler client1Handler = new ClientHandler();
-        ClientHandler client2Handler = new ClientHandler();
+        ClientHandler client1Handler = new ClientHandler(barrier);
+        ClientHandler client2Handler = new ClientHandler(barrier);
 
         new ClientHandlerThread(client1, client1Handler, client2Handler, boardSelectLock)
                 .start();
@@ -50,8 +53,8 @@ public class Server
         {
             try
             {
-                clientHandler.handle(client, otherClientHandler, boardSelectLock);
-            } catch (IOException | InterruptedException e)
+                clientHandler.handle(client, otherClientHandler);
+            } catch (IOException | InterruptedException | BrokenBarrierException e)
             {
                 throw new RuntimeException(e);
             }
