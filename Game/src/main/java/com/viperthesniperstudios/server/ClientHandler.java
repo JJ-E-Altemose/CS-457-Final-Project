@@ -32,7 +32,10 @@ import java.util.concurrent.TimeoutException;
 
 public class ClientHandler
 {
-    private static int MAX_ROUNDS = 3;
+    private static final int MAX_ROUNDS = 3;
+    static final int BOARD_WIDTH = 7;
+    static final int BOARD_HEIGHT = 7;
+    static final int BOARD_BOMBS = 8;
 
     public long lastFlaggedCorrectlyTime;
     public long lastRevealedTime;
@@ -43,22 +46,21 @@ public class ClientHandler
     public int roundsComplete = 0;
     public boolean isAlive = true;
 
-    public Semaphore boardSelectLock;
-
     private Socket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
     private Minesweeper minesweeper;
 
-    private Random random = new Random(95);//todo FIX RANDOM
+    private Random random;//todo FIX RANDOM
 
     ClientHandler otherClient;
     private CyclicBarrier barrier;
 
-    public ClientHandler(CyclicBarrier barrier) throws IOException
+    public ClientHandler(CyclicBarrier barrier, Random random) throws IOException
     {
         this.barrier = barrier;
-        this.minesweeper = new Minesweeper(7,7,8,random.nextLong());//todo fix config
+        this.random = random;
+        this.minesweeper = new Minesweeper(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS,random.nextLong());//todo fix config
     }
 
     private <T extends Message> T getMessageOfType(TypeID typeID) throws IOException
@@ -86,7 +88,6 @@ public class ClientHandler
         this.otherClient = otherClient;
 
         roundStartTime = System.nanoTime();//todo UPDATE SPEC WITH TOTAL ROUND TIME
-        this.boardSelectLock = boardSelectLock;
 
         while (true)
         {
@@ -251,14 +252,12 @@ public class ClientHandler
         if(roundsComplete < MAX_ROUNDS)
         {
             //todo BOTH SELECT CASE CAUSE OF TIMING
-            if(otherClient.lastRoundTime > lastRoundTime)
+            if(otherClient.lastRoundTime < lastRoundTime)
             {
                 handelBoardSelect();
-                //boardSelectLock.release();//LETS OTHER CLIENT CONTINUE
             }
             else
             {
-                //boardSelectLock.acquire();//WAITS FOR CLIENT TO SELECT
                 new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
                         new RoundEnd(RoundEnd.Type.WAITING, null))
                         .writeFullMessageToStream(outputStream);
@@ -296,17 +295,17 @@ public class ClientHandler
 
     private void handelBoardSelect() throws IOException
     {
-        minesweeper.setBoard(Minesweeper.createBoardFromSeed(7,7,8, random.nextLong()));//NEED A NEW BOARD FOR YOUR GAME
+        minesweeper.setBoard(Minesweeper.createBoardFromSeed(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS, random.nextLong()));//NEED A NEW BOARD FOR YOUR GAME
 
         CellByte[][][] boards = new CellByte[][][]
                 {
-                    Minesweeper.createBoardFromSeed(7,7,8, random.nextLong()),
-                    Minesweeper.createBoardFromSeed(7,7,8, random.nextLong()),
-                    Minesweeper.createBoardFromSeed(7,7,8, random.nextLong())
+                    Minesweeper.createBoardFromSeed(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS, random.nextLong()),
+                    Minesweeper.createBoardFromSeed(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS, random.nextLong()),
+                    Minesweeper.createBoardFromSeed(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS, random.nextLong())
                 };
 
         SelectBoardRequest selectBoardRequest =
-                new SelectBoardRequest(7,7, boards);
+                new SelectBoardRequest(BOARD_WIDTH,BOARD_HEIGHT, boards);
 //tripled nested :0
         new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
                 new RoundEnd(RoundEnd.Type.SELECTING, selectBoardRequest))

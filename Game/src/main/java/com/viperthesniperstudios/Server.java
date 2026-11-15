@@ -5,6 +5,7 @@ import com.viperthesniperstudios.server.ClientHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
@@ -15,8 +16,7 @@ public class Server
     {
         Arguments arguments = new Arguments(args);
 
-        Semaphore boardSelectLock = new Semaphore(0);
-        //TODO CHange spec for boardSelectLock
+        Random random = new Random(95);//Statically tied for easier testing
 
         ServerSocket serverSocket = new ServerSocket(arguments.port);
         Socket client1 = serverSocket.accept();
@@ -24,12 +24,12 @@ public class Server
 
         CyclicBarrier barrier = new CyclicBarrier(2);
 
-        ClientHandler client1Handler = new ClientHandler(barrier);
-        ClientHandler client2Handler = new ClientHandler(barrier);
+        ClientHandler client1Handler = new ClientHandler(barrier, random);
+        ClientHandler client2Handler = new ClientHandler(barrier, random);
 
-        new ClientHandlerThread(client1, client1Handler, client2Handler, boardSelectLock)
+        new ClientHandlerThread(client1, client1Handler, client2Handler)
                 .start();
-        new ClientHandlerThread(client2, client2Handler, client1Handler, boardSelectLock)
+        new ClientHandlerThread(client2, client2Handler, client1Handler)
                 .start();
     }
 
@@ -38,14 +38,12 @@ public class Server
         final Socket client;
         final ClientHandler clientHandler;
         final ClientHandler otherClientHandler;
-        final Semaphore boardSelectLock;
 
-        ClientHandlerThread(Socket client, ClientHandler clientHandler, ClientHandler otherClientHandler, Semaphore boardSelectLock)
+        ClientHandlerThread(Socket client, ClientHandler clientHandler, ClientHandler otherClientHandler)
         {
             this.client = client;
             this.clientHandler = clientHandler;
             this.otherClientHandler = otherClientHandler;
-            this.boardSelectLock = boardSelectLock;
         }
 
         @Override
