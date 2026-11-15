@@ -35,7 +35,6 @@ public class ClientHandler
     public long roundStartTime;
     public long totalRoundTime = 0;
     public long lastRoundTime = 0;
-    //public long roundEndTime;//TODO ADD SPEC
     public int flaggedBombCount;
     public int roundsComplete = 0;
     public boolean isAlive = true;
@@ -80,7 +79,7 @@ public class ClientHandler
         this.outputStream = socket.getOutputStream();
         this.otherClient = otherClient;
 
-        roundStartTime = System.nanoTime();//todo UPDATE WITH TOTAL ROUND TIME
+        roundStartTime = System.nanoTime();//todo UPDATE SPEC WITH TOTAL ROUND TIME
         this.boardSelectLock = boardSelectLock;
 
         while (true)
@@ -120,6 +119,7 @@ public class ClientHandler
             case UNACCEPTABLE ->
             {
                 //We consider an unacceptable from the client as a time to nope out
+                //that we way don't have the client and server going on a nuh uuuh battle
                 throw new IllegalStateException("UNACCEPTABLE RECEIVED");
             }
             default ->
@@ -189,7 +189,7 @@ public class ClientHandler
         }
         catch (GameLoss e)
         {
-            this.isAlive = false;//todo HANDLE ACTUAL END
+            this.isAlive = false;
 
             new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
                     new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
@@ -206,8 +206,6 @@ public class ClientHandler
 
     private void handleRoundWin() throws IOException, InterruptedException
     {
-        //The round is now over so we are free to release the lock
-
         lastRoundTime = System.nanoTime() - roundStartTime;
         totalRoundTime += lastRoundTime;
         roundsComplete += 1;
@@ -221,10 +219,6 @@ public class ClientHandler
         {
             throw new GameWin();//todo NO THROW FROM HERE, NESTED RETURN
         }
-
-        //while (otherClient.roundsComplete != roundsComplete) {}
-        //incase start somehow stagered so long that player completes round before the other even start
-        //should never happen
 
         if(roundsComplete < MAX_ROUNDS)
         {
@@ -241,31 +235,11 @@ public class ClientHandler
                         new RoundEnd(RoundEnd.Type.WAITING, null))
                         .writeFullMessageToStream(outputStream);
             }//todo check
-
-
-
-            //todo: wait till other done
-
-            //todo: IF OTHER FASTER THAN YOU SELECT
-            //todo: ELSE WAIT
-            //new RevealCellResponse(RevealCellResponse.ReturnCode.ROUND_END,
-            //        new RoundEnd()).writeFullMessageToStream(outputStream);
         }
         else
         {
             decideWinner();
         }
-
-        //roundLock.acquire();
-
-
-
-        //new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
-        //        new GameEnd(GameEnd.Type.WIN)).writeFullMessageToStream(outputStream);
-        //handelBoardSelect();
-        return;
-
-        //todo HANDLE ACTUAL END
     }
 
     private void decideWinner() throws IOException
@@ -277,7 +251,7 @@ public class ClientHandler
                     .writeFullMessageToStream(outputStream);
         }
         else if (otherClient.totalRoundTime == totalRoundTime)
-        {
+        {//TODO EXPAND CASE
             new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
                     new GameEnd(GameEnd.Type.DRAW))
                     .writeFullMessageToStream(outputStream);
