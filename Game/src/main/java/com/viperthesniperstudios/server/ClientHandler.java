@@ -91,7 +91,24 @@ public class ClientHandler
 
         while (true)
         {
-            handleMessage(readMessage());
+            try
+            {
+                handleMessage(readMessage());
+            }
+            catch (IOException e)
+            {
+                isAlive = false;
+
+                try
+                {
+                    //*koolaid mans through your wall*
+                    barrier.await(0, TimeUnit.NANOSECONDS);
+                }
+                catch (TimeoutException ignored)
+                {
+                    //tell other thread it may go as it pleases
+                }
+            }
         }
     }
 

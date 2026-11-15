@@ -24,9 +24,10 @@ Because of java object synchronization, this is very simple and not complex
 # Changes
 Since one client never writes to a another except for board select, nothing needs
 to be synchronized, the only part that does is the the board select and round end
-which can easily be achieved with spin locks, and I did a spin wait for the waiting
-for both clients to finish but used an binarysemaphore for the board select for reasons
-of i wanted to and its better than just doing nothing.
+which can easily be achieved with spin locks, but I wanted to use something else so 
+I used a cyclic barrier instead, which waits for both threads to reach a point and
+they wait till both have ended a round, and they wait till both have finished processing
+ending a round. 
 
-The semaphore starts unlocked
-//todo DIAGRAM
+If the client disconnects or looses the barrier is broken, and the one potentially waiting at 
+the lock wins
