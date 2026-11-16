@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -51,7 +52,7 @@ public class ClientHandler
     private OutputStream outputStream;
     private Minesweeper minesweeper;
 
-    private Random random;//todo FIX RANDOM
+    private Random random;
 
     ClientHandler otherClient;
     private CyclicBarrier barrier;
@@ -60,7 +61,7 @@ public class ClientHandler
     {
         this.barrier = barrier;
         this.random = random;
-        this.minesweeper = new Minesweeper(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS,random.nextLong());//todo fix config
+        this.minesweeper = new Minesweeper(BOARD_WIDTH,BOARD_HEIGHT,BOARD_BOMBS,random.nextLong());
     }
 
     private <T extends Message> T getMessageOfType(TypeID typeID) throws IOException
@@ -87,7 +88,7 @@ public class ClientHandler
         this.outputStream = socket.getOutputStream();
         this.otherClient = otherClient;
 
-        roundStartTime = System.nanoTime();//todo UPDATE SPEC WITH TOTAL ROUND TIME
+        roundStartTime = System.nanoTime();
 
         while (true)
         {
@@ -195,16 +196,28 @@ public class ClientHandler
 
     private void handleRevealCellRequest(RevealCellRequest revealCellRequest) throws IOException, InterruptedException, BrokenBarrierException
     {
-        //todo DROP ALREADY REVEAL, I REALLY CANT BE ASSED
         try
         {
             lastRevealedTime = System.nanoTime();
+
+            if(!minesweeper.getBoard()[revealCellRequest.x][revealCellRequest.y].isHidden())
+            {
+                new RevealCellResponse(RevealCellResponse.ReturnCode.ALREADY_REVEALED_ERROR,
+                        new GameState(
+                                minesweeper.getWidth(),
+                                minesweeper.getHeight(),
+                                minesweeper.getBoard(),
+                                otherClient.minesweeper.getBoard())).writeFullMessageToStream(outputStream);
+                return;
+            }
+
             minesweeper.revealCell(revealCellRequest.x, revealCellRequest.y);
         }
         catch (IndexOutOfBoundsException e)
         {
             new RevealCellResponse(RevealCellResponse.ReturnCode.INVALID_CELL_ERROR,
                     null).writeFullMessageToStream(outputStream);
+            return;
         }
         catch (GameWin e)
         {
@@ -226,6 +239,7 @@ public class ClientHandler
             {
                 //tell other thread it may go as it pleases
             }
+            return;
         }
 
         new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_STATE_RETURN,
@@ -243,11 +257,6 @@ public class ClientHandler
         totalRoundTime += lastRoundTime;
         roundsComplete += 1;
 
-        /*while (otherClient.isAlive && (otherClient.roundsComplete < roundsComplete))
-        {
-            //SPIN WAIT FOR THE W
-        }*/
-
         try
         {
             barrier.await();
@@ -260,17 +269,16 @@ public class ClientHandler
             return;
         }
 
-        /*
-        if(!otherClient.isAlive)
-        {
-            throw new GameWin();//todo NO THROW FROM HERE, NESTED RETURN
-        }*/
 
         if(roundsComplete < MAX_ROUNDS)
         {
-            //todo BOTH SELECT CASE CAUSE OF TIMING
             if(otherClient.lastRoundTime < lastRoundTime)
             {
+                handelBoardSelect();
+            }
+            else if(otherClient.lastRoundTime == lastRoundTime &&
+                    System.identityHashCode(this) > System.identityHashCode(otherClient))
+            {//Object hashcode gaunted to be different, so who ever has the higher hashcode gets to select
                 handelBoardSelect();
             }
             else

@@ -169,10 +169,16 @@ public class Minesweeper implements IMinesweeper
             case INVALID_CELL_ERROR ->
             {
                 throw new RuntimeException("INVALID CELL SOMEHOW");
+                //If this happens something has gone seriously wrong
             }
             case ALREADY_REVEALED_ERROR ->
             {
-                //I dont wanna
+                if(revealCellResponse.response instanceof GameState gameState)
+                {
+                    board = gameState.yourBoard;
+                    otherBoard = gameState.otherBoard;
+                }
+                return; //Cool the users a goof ball and revealed something twice, I dont care
             }
             case GAME_END ->
             {
@@ -257,21 +263,23 @@ public class Minesweeper implements IMinesweeper
         }
 
 
-        new SelectBoardResponse(selected).writeFullMessageToStream(outputStream);
-
-        Message message = MessageFactory.getMessage(inputStream);
-
-        if(message instanceof SelectBoardAck ack)
+        while(true)
         {
-            if(ack.code != SelectBoardAck.Code.SUCCESS)
+            new SelectBoardResponse(selected).writeFullMessageToStream(outputStream);
+
+            Message message = MessageFactory.getMessage(inputStream);
+
+            if(message instanceof SelectBoardAck ack)
             {
-                throw new RuntimeException("ERROR WITH BOARD");//todo RETRY
+                if(ack.code == SelectBoardAck.Code.SUCCESS)
+                {
+                    break;
+                }
             }
-        }
-        else
-        {
-
-            throw new RuntimeException("INVALID MESSAGE TYPE");
+            else
+            {
+                throw new RuntimeException("INVALID MESSAGE TYPE");
+            }
         }
     }
 

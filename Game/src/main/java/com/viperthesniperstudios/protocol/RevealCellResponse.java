@@ -33,8 +33,16 @@ public class RevealCellResponse extends Message
         super(new MessageHeader(0, TypeID.REVEAL_CELL_RESPONSE));//todo why we passing the header wth is the point?
 
         this.returnCode = returnCode;
-        this.typeID = response.header.typeID.id;
-        this.response = response;
+
+        if(response != null)
+        {
+            this.typeID = response.header.typeID.id;
+            this.response = response;
+        }
+        else
+        {
+            this.typeID = 0;
+        }
     }
 
     @Override
@@ -50,10 +58,11 @@ public class RevealCellResponse extends Message
         typeID = dataInputStream.readInt();
 
         switch (returnCode)
-        {//todo FIX no header
+        {
             case GAME_STATE_RETURN -> response = new GameState(MessageHeader.NO_HEADER).readFromStream(inputStream);
             case GAME_END -> response = new GameEnd(MessageHeader.NO_HEADER).readFromStream(inputStream);
             case ROUND_END -> response = new RoundEnd(MessageHeader.NO_HEADER).readFromStream(inputStream);
+            case ALREADY_REVEALED_ERROR -> response = new GameState(MessageHeader.NO_HEADER).readFromStream(inputStream);
             default -> response = null;
         }
 
@@ -78,10 +87,15 @@ public class RevealCellResponse extends Message
         outputStream.write(0);
         outputStream.write(0);
 
-        if(returnCode != ReturnCode.INVALID_CELL_ERROR &&
-           returnCode != ReturnCode.ALREADY_REVEALED_ERROR)
+        if(returnCode != ReturnCode.INVALID_CELL_ERROR)
         {
             response.writeToStream(outputStream);
+        }
+        else
+        {
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            dataOutputStream.writeShort(0);
+            dataOutputStream.writeInt(0);
         }
     }
 }
