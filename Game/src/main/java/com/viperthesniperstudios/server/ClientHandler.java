@@ -228,8 +228,17 @@ public class ClientHandler
         {
             this.isAlive = false;
 
-            new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
-                    new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
+            if(otherClient.isAlive == false)
+            {
+                new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                        new GameEnd(GameEnd.Type.WIN)).writeFullMessageToStream(outputStream);
+            }
+            else
+            {
+                new RevealCellResponse(RevealCellResponse.ReturnCode.GAME_END,
+                        new GameEnd(GameEnd.Type.LOSS)).writeFullMessageToStream(outputStream);
+            }
+
             try
             {
                 //*koolaid mans through your wall*
