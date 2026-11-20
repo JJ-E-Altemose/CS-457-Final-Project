@@ -3,6 +3,7 @@
 apk add gcompat
 wget https://github.com/JJ-E-Altemose/CS-457-Final-Project/raw/refs/heads/main/Built/Linux/CompetitveMinesweeperClient
 chmod +x CompetitveMinesweeperClient
+stty -icanon
 ./CompetitveMinesweeperClient -p 9294 -i server.altemose.edu
 ```
 # Run this on Servers:
