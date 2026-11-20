@@ -6,6 +6,7 @@ import com.viperthesniperstudios.minesweeper.GameLoss;
 import com.viperthesniperstudios.minesweeper.GameWin;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -19,7 +20,7 @@ public class Client
         InetAddress address;
         try
         {
-            address = InetAddress.getByName(arguments.hostname);
+            address = Inet4Address.getByName(arguments.hostname);
         }
         catch (UnknownHostException e)
         {
