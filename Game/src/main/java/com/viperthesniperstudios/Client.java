@@ -10,6 +10,8 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.net.spi.InetAddressResolverProvider;
+import java.util.Arrays;
 
 public class Client
 {
@@ -17,10 +19,13 @@ public class Client
     {
         Arguments arguments = new Arguments(args);
 
-        InetAddress address;
+        Inet4Address address;
         try
         {
-            address = Inet4Address.getByName(arguments.hostname);
+            address = Arrays.stream(Inet4Address.getAllByName(arguments.hostname))
+                    .filter(Inet4Address.class::isInstance)
+                    .map(Inet4Address.class::cast)
+                    .findFirst().orElseThrow(UnknownHostException::new);
         }
         catch (UnknownHostException e)
         {
